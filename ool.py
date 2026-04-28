@@ -9,6 +9,7 @@ import logging
 import sys
 import time
 import random
+import os #os.name
 import ollama
 from ollama import chat
 
@@ -16,6 +17,12 @@ from ollama import chat
 logging.getLogger("ollama").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
+#The end-of-file character is different on Windows vs Unix, so we need to print a different message depending on the OS so the user knows how to end their prompt.
+
+if os.name == 'nt':
+    EOF_MESSAGE = "Press Ctrl+Z on an empty line, then Enter to finish your prompt."
+else:
+    EOF_MESSAGE = "Press Ctrl+D on an empty line, then Enter to finish your prompt."
 
 def is_model_error(e):
     """Check if an exception looks like a missing or invalid model."""
@@ -55,10 +62,14 @@ logging.basicConfig(
 )
 
 # Ask user for system prompt
-SYSTEM_PROMPT_INPUT = input("Enter the system prompt for the model: ").strip()
+SYSTEM_PROMPT_INPUT = ''
 while not SYSTEM_PROMPT_INPUT:
-    print("System prompt cannot be empty.")
-    SYSTEM_PROMPT_INPUT = input("Enter the system prompt for the model: ").strip()
+    print(f"Enter the system prompt for the model. {EOF_MESSAGE}")
+    try:
+        SYSTEM_PROMPT_INPUT = sys.stdin.read().strip()
+    except KeyboardInterrupt:
+        print("\nInput cancelled by user. Exiting.")
+        sys.exit()
 
 # Define system message
 SYSTEM_MESSAGE = {
