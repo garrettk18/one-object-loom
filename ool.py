@@ -93,10 +93,13 @@ USER_MESSAGE = {
 }
 
 # Prompt user to modify the content field
-NEW_CONTENT = input(f"Current user message:\n{USER_MESSAGE['content']}\n"
-                    "Press Enter to keep it or type a new message: ").strip()
-if NEW_CONTENT:
-    USER_MESSAGE['content'] = NEW_CONTENT
+print(f'Current user message: {USER_MESSAGE['content']}')
+modify_user_message = input('Would you like to modify the user message?').strip()
+if modify_user_message in ['y', 'yes']:
+    USER_MESSAGE["content"] = ''
+    while not USER_MESSAGE["content"]:
+        print(f'Enter a new user message. {EOF_MESSAGE}')
+        USER_MESSAGE["content"] = sys.stdin.read().strip()
 
 # Ask user for custom continuation phrase
 CONTINUATION_PHRASE = input(
@@ -104,8 +107,8 @@ CONTINUATION_PHRASE = input(
     "Generate more text along these lines:"
 
 # Prompt the user
-print(f"Loom starting with model: {USE_MODEL}, system message: {SYSTEM_MESSAGE}, "
-      f"user message: {USER_MESSAGE}, session name: {SESSION_NAME}")
+print(f"Loom starting with model: {USE_MODEL}, system message: {SYSTEM_MESSAGE['content']}, "
+      f"user message: {USER_MESSAGE['content']}, session name: {SESSION_NAME}")
 START = input("Do you want to start the loom? (yes/no): ").strip().lower()
 if START not in ['yes', 'y']:
     print("Exiting...")
