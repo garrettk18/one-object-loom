@@ -11,6 +11,7 @@ import time
 import random
 import os #os.name
 import ollama
+import re #to clean filenames
 from ollama import chat
 
 # Suppress noisy HTTP/server logging from ollama and httpx
@@ -24,6 +25,7 @@ if os.name == 'nt':
 else:
     EOF_MESSAGE = "Press Ctrl+D on an empty line, then Enter to finish your prompt."
 
+FILE_REPLACE_RE = r'(\t|\\|/|:|\*|\?|"|<|>|\||\0|\s)'
 def is_model_error(e):
     """Check if an exception looks like a missing or invalid model."""
     msg = str(e).lower()
@@ -48,7 +50,7 @@ def show_available_models():
 
 # Ask for a session name
 SESSION_NAME = input("Enter a name for this session: ").strip() or "default"
-LOG_FILENAME = f"loom-{SESSION_NAME}.log"
+LOG_FILENAME = re.sub(FILE_REPLACE_RE, '-', f"loom-{SESSION_NAME}.log")
 
 # Show installed models then ask for selection
 show_available_models()
