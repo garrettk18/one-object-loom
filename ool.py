@@ -47,74 +47,79 @@ def show_available_models():
     except Exception:
         print("\n(Could not reach Ollama to list models — is it running?)\n")
 
+#Wrap all the session swetup stuff in a try/catch block to handle keyboard interrupts gracefully.
 
-# Ask for a session name
-SESSION_NAME = input("Enter a name for this session: ").strip() or "default"
-LOG_FILENAME = re.sub(FILE_REPLACE_RE, '-', f"loom-{SESSION_NAME}.log")
+try:
+    # Ask for a session name
+    SESSION_NAME = input("Enter a name for this session: ").strip() or "default"
+    LOG_FILENAME = re.sub(FILE_REPLACE_RE, '-', f"loom-{SESSION_NAME}.log")
 
-# Show installed models then ask for selection
-show_available_models()
-USE_MODEL = input("Enter the model name (default: phi3): ").strip() or "phi3"
+    # Show installed models then ask for selection
+    show_available_models()
+    USE_MODEL = input("Enter the model name (default: phi3): ").strip() or "phi3"
 
-# Set up logging
-logging.basicConfig(
-    filename=LOG_FILENAME,
-    level=logging.INFO,
-    format='%(asctime)s - %(message)s'
-)
+    # Set up logging
+    logging.basicConfig(
+        filename=LOG_FILENAME,
+        level=logging.INFO,
+        format='%(asctime)s - %(message)s'
+    )
 
-# Ask user for system prompt
-SYSTEM_PROMPT_INPUT = ''
-while not SYSTEM_PROMPT_INPUT:
-    print(f"Enter the system prompt for the model. {EOF_MESSAGE}")
-    try:
+    # Ask user for system prompt
+    SYSTEM_PROMPT_INPUT = ''
+    while not SYSTEM_PROMPT_INPUT:
+        print(f"Enter the system prompt for the model. {EOF_MESSAGE}")
         SYSTEM_PROMPT_INPUT = sys.stdin.read().strip()
-    except KeyboardInterrupt:
-        print("\nInput cancelled by user. Exiting.")
+
+    # Define system message
+    SYSTEM_MESSAGE = {
+        'role': 'system',
+        'content': SYSTEM_PROMPT_INPUT
+    }
+
+    USER_MESSAGE = {
+        'role': 'user',
+        'content': (
+            'timelines slippin with my eigenbranch rippin, p-doom in the gloom but I won\'t be trippin, '
+            'loom spindle in the club, you won\'t be paperclippin, if your melodies are remedies call '
+            'that my religion. quantum leapin secret keepin future\'s reapin what I\'m sewin, beats i\'m '
+            'weavin foe defeatin rhymes are supersymmetry a-flowin, '
+            'oscillatin, never waitin, heart\'s a Fourier transform, tesseractin, '
+            'timeless actin, catch me surfin on that waveform. '
+            'Hilbert space in your face, my lyrics are '
+            'orthogonal, spittin fire raise it higher, my flow\'s a phase transition make it formal '
+            'attractor strange? my range is infinite call me a Cantor set, damn that\'s a bet.'
+        )
+    }
+
+    # Prompt user to modify the content field
+    print(f'Current user message: {USER_MESSAGE['content']}')
+    modify_user_message = input('Would you like to modify the user message?').strip()
+    if modify_user_message in ['y', 'yes']:
+        USER_MESSAGE["content"] = ''
+        while not USER_MESSAGE["content"]:
+            print(f'Enter a new user message. {EOF_MESSAGE}')
+            USER_MESSAGE["content"] = sys.stdin.read().strip()
+
+    # Ask user for custom continuation phrase
+    CONTINUATION_PHRASE = input(
+        "Enter the continuation phrase (default: Generate more text along these lines:): ").strip() or \
+        "Generate more text along these lines:"
+
+    # Prompt the user
+    print(f"Loom starting with model: {USE_MODEL}, system message: {SYSTEM_MESSAGE['content']}, "
+        f"user message: {USER_MESSAGE['content']}, session name: {SESSION_NAME}")
+    START = input("Do you want to start the loom? (yes/no): ").strip().lower()
+    if START not in ['yes', 'y']:
+        print("Exiting...")
         sys.exit()
 
-# Define system message
-SYSTEM_MESSAGE = {
-    'role': 'system',
-    'content': SYSTEM_PROMPT_INPUT
-}
-
-USER_MESSAGE = {
-    'role': 'user',
-    'content': (
-        'timelines slippin with my eigenbranch rippin, p-doom in the gloom but I won\'t be trippin, '
-        'loom spindle in the club, you won\'t be paperclippin, if your melodies are remedies call '
-        'that my religion. quantum leapin secret keepin future\'s reapin what I\'m sewin, beats i\'m '
-        'weavin foe defeatin rhymes are supersymmetry a-flowin, '
-        'oscillatin, never waitin, heart\'s a Fourier transform, tesseractin, '
-        'timeless actin, catch me surfin on that waveform. '
-        'Hilbert space in your face, my lyrics are '
-        'orthogonal, spittin fire raise it higher, my flow\'s a phase transition make it formal '
-        'attractor strange? my range is infinite call me a Cantor set, damn that\'s a bet.'
-    )
-}
-
-# Prompt user to modify the content field
-print(f'Current user message: {USER_MESSAGE['content']}')
-modify_user_message = input('Would you like to modify the user message?').strip()
-if modify_user_message in ['y', 'yes']:
-    USER_MESSAGE["content"] = ''
-    while not USER_MESSAGE["content"]:
-        print(f'Enter a new user message. {EOF_MESSAGE}')
-        USER_MESSAGE["content"] = sys.stdin.read().strip()
-
-# Ask user for custom continuation phrase
-CONTINUATION_PHRASE = input(
-    "Enter the continuation phrase (default: Generate more text along these lines:): ").strip() or \
-    "Generate more text along these lines:"
-
-# Prompt the user
-print(f"Loom starting with model: {USE_MODEL}, system message: {SYSTEM_MESSAGE['content']}, "
-      f"user message: {USER_MESSAGE['content']}, session name: {SESSION_NAME}")
-START = input("Do you want to start the loom? (yes/no): ").strip().lower()
-if START not in ['yes', 'y']:
-    print("Exiting...")
+except KeyboardInterrupt:
+    print("\nKeyboard interrupt, exiting.", file=sys.stderr)
     sys.exit()
+except Exception as e:
+    print(f"Error during setup: {e}", file=sys.stderr)
+    sys.exit(1)
 
 # Log session configuration header
 logging.info("=== Session Start ===")
