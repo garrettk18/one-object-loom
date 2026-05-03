@@ -49,7 +49,7 @@ def show_available_models():
     except Exception:
         print("\n(Could not reach Ollama to list models — is it running?)\n")
 
-#Wrap all the session swetup stuff in a try/catch block to handle keyboard interrupts gracefully.
+#Wrap all the session setup stuff in a try/catch block to handle keyboard interrupts gracefully.
 
 try:
     # Ask for a session name
