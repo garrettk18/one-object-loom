@@ -26,6 +26,8 @@ else:
     EOF_MESSAGE = "Press Ctrl+D on an empty line, then Enter to finish your prompt."
 
 FILE_REPLACE_RE = r'(\t|\\|/|:|\*|\?|"|<|>|\||\0|\s)'
+YESNO_MESSAGE = '(y or yes, n or no):'
+
 def is_model_error(e):
     """Check if an exception looks like a missing or invalid model."""
     msg = str(e).lower()
@@ -96,7 +98,9 @@ try:
     print(f'Current user message: {USER_MESSAGE['content']}')
     modify_user_message = ''
     while modify_user_message not in ['y', 'yes', 'n', 'no']:
-        modify_user_message = input('Would you like to modify the user message? ').strip()
+        modify_user_message = input('Would you like to modify the user message? ' + YESNO_MESSAGE).strip()
+        if modify_user_message not in ['y', 'yes', 'n', 'no']:
+            print('Invalid response.')
     if modify_user_message in ['y', 'yes']:
         USER_MESSAGE["content"] = ''
         while not USER_MESSAGE["content"]:
@@ -111,7 +115,7 @@ try:
     # Prompt the user
     print(f"Loom starting with model: {USE_MODEL}, system message: {SYSTEM_MESSAGE['content']}, "
         f"user message: {USER_MESSAGE['content']}, session name: {SESSION_NAME}")
-    START = input("Do you want to start the loom? (yes/no): ").strip().lower()
+    START = input("Do you want to start the loom? " + YESNO_MESSAGE).strip().lower()
     if START not in ['yes', 'y']:
         print("Exiting...")
         sys.exit()
