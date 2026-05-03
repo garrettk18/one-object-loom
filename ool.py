@@ -94,7 +94,9 @@ try:
 
     # Prompt user to modify the content field
     print(f'Current user message: {USER_MESSAGE['content']}')
-    modify_user_message = input('Would you like to modify the user message?').strip()
+    modify_user_message = ''
+    while modify_user_message not in ['y', 'yes', 'n', 'no']:
+        modify_user_message = input('Would you like to modify the user message? ').strip()
     if modify_user_message in ['y', 'yes']:
         USER_MESSAGE["content"] = ''
         while not USER_MESSAGE["content"]:
