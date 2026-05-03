@@ -112,9 +112,10 @@ try:
         "Enter the continuation phrase (default: Generate more text along these lines:): ").strip() or \
         "Generate more text along these lines:"
 
+    context_window = int(input('Enter context length (default 8192)'.strip() or 8192))
     # Prompt the user
     print(f"Loom starting with model: {USE_MODEL}, system message: {SYSTEM_MESSAGE['content']}, "
-        f"user message: {USER_MESSAGE['content']}, session name: {SESSION_NAME}")
+        f"user message: {USER_MESSAGE['content']}, context window: {context_window}, session name: {SESSION_NAME}")
     START = input("Do you want to start the loom? " + YESNO_MESSAGE).strip().lower()
     if START not in ['yes', 'y']:
         print("Exiting...")
@@ -133,6 +134,7 @@ logging.info(f"Model: {USE_MODEL}")
 logging.info(f"System prompt: {SYSTEM_PROMPT_INPUT}")
 logging.info(f"Continuation phrase: {CONTINUATION_PHRASE}")
 logging.info(f"Initial user message: {USER_MESSAGE['content']}")
+logging.info(f'Context window: {context_window}')
 logging.info("====================")
 
 # Build initial conversation history with system prompt and seed message
@@ -140,7 +142,7 @@ conversation_history = [SYSTEM_MESSAGE, USER_MESSAGE]
 
 print("Sending seed value...")
 try:
-    response = chat(model=USE_MODEL, messages=conversation_history)
+    response = chat(model=USE_MODEL, messages=conversation_history, options={"num_ctx": context_window})
     assistant_reply = response["message"]["content"]
 except Exception as e:
     if is_model_error(e):
@@ -185,7 +187,7 @@ try:
         conversation_history.append({'role': 'user', 'content': next_user_content})
 
         try:
-            response = chat(model=USE_MODEL, messages=conversation_history)
+            response = chat(model=USE_MODEL, messages=conversation_history, options={"num_ctx": context_window})
             assistant_reply = response["message"]["content"]
 
             # Append assistant reply to history
