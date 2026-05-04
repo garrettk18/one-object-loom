@@ -112,7 +112,8 @@ try:
         "Enter the continuation phrase (default: Generate more text along these lines:): ").strip() or \
         "Generate more text along these lines:"
 
-    context_window = int(input('Enter context length (default 8192)'.strip() or 8192))
+    context_window = int(input('Enter context length (default 8192): ').strip() or '8192')
+    print(f"Context window set to: {context_window}")
     # Prompt the user
     print(f"Loom starting with model: {USE_MODEL}, system message: {SYSTEM_MESSAGE['content']}, "
         f"user message: {USER_MESSAGE['content']}, context window: {context_window}, session name: {SESSION_NAME}")
