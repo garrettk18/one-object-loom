@@ -187,7 +187,7 @@ try:
         conversation_history.append({'role': 'user', 'content': next_user_content})
 
         try:
-            response = chat(model=USE_MODEL, messages=conversation_history, options={"num_ctx": context_window})
+            response = chat(model=USE_MODEL, messages=conversation_history, options={"num_ctx": context_window}, keep_alive='15m')
             assistant_reply = response["message"]["content"]
 
             # Append assistant reply to history
