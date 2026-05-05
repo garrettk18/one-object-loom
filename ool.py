@@ -27,7 +27,8 @@ else:
 
 FILE_REPLACE_RE = r'(\t|\\|/|:|\*|\?|"|<|>|\||\0|\s)'
 YESNO_MESSAGE = '(y or yes, n or no):'
-
+MAX_RETRIES: int = 3 #Arbitrarily pulled out of my ass
+need_retry: bool = False
 def is_model_error(e):
     """Check if an exception looks like a missing or invalid model."""
     msg = str(e).lower()
@@ -169,16 +170,27 @@ variation_phrases = [
     "What happened next?"
 ]
 
+#Let's nest all the things! Wheeeeee!
 try:
+    num_retries = 0
+    need_retry = False
+    next_user_content = ''
     while True:
         print("Weaving...")
 
         # Build the next user message
-        if assistant_reply == PREVIOUS_TEXT:
-            print("Repeating detected, modifying input and retrying...")
-            random_variation = random.choice(variation_phrases)
-            next_user_content = f"{random_variation} {CONTINUATION_PHRASE}"
-            time.sleep(1)
+        if not need_retry:
+            if assistant_reply == PREVIOUS_TEXT:
+                print("Repeating detected, modifying input and retrying...")
+                random_variation = random.choice(variation_phrases)
+                next_user_content = f"{random_variation} {CONTINUATION_PHRASE}"
+                time.sleep(1)
+        elif need_retry and num_retries < MAX_RETRIES:
+            print("Previous attempt failed, retrying with the same input...")
+            next_user_content = assistant_reply
+        elif num_retries >= MAX_RETRIES:
+            print('Maximum retries reached.')
+            raise Exception(f'Model failed to respond after {MAX_RETRIES} retries.')
         else:
             PREVIOUS_TEXT = assistant_reply
             next_user_content = CONTINUATION_PHRASE
@@ -196,21 +208,31 @@ try:
             LOG_MESSAGE = f"Round {ITER}, text: {assistant_reply}"
             print(LOG_MESSAGE)
             logging.info(LOG_MESSAGE)
+            need_retry = False
+            num_retries = 0
 
         except Exception as e:
-            if is_model_error(e):
+            num_retries += 1
+            need_retry = True
+            msg = f'Model threw exception: {e}. Retry {num_retries + 1} of {MAX_RETRIES}.'
+            num_retries += 1
+
+            print(msg, file=sys.stderr)
+            logging.warning(msg)
+            if is_model_error(e) and num_retries >= MAX_RETRIES:  
                 print(f"\nModel '{USE_MODEL}' stopped responding or is no longer available.")
                 print(f"Check it's still loaded with: ollama list")
                 logging.error(f"Model error on round {ITER}: {e}")
                 conversation_history.pop()
                 sys.exit(1)
-            print(f"Error on round {ITER}: {e}")
-            logging.error(f"Error on round {ITER}: {e}")
-            # Remove the user turn we just added since the request failed
-            conversation_history.pop()
-            print("Waiting 10 seconds before retry...")
-            time.sleep(10)
-            continue
+            else:
+                print(f"Error on round {ITER}: {e}")
+                logging.error(f"Error on round {ITER}: {e}")
+                # Remove the user turn we just added since the request failed
+                conversation_history.pop()
+                print("Waiting 10 seconds before retry...")
+                time.sleep(10)
+                continue
 
         ITER += 1
         time.sleep(2)
