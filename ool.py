@@ -220,7 +220,10 @@ try:
 
         except Exception as e:
             #We add 1 to num_retries in the line below because we want the log message to reflect the retry attempt that is about to happen, not the one that just happened. So if the first attempt fails, we want the log to say "Retry 1 of 3", not "Retry 0 of 3".
-            msg = f'Model threw exception: {e}. Retry {num_retries + 1} of {MAX_RETRIES}.'
+            msg = f'Model threw exception: {e}. Retry {num_retries + 1} of {MAX_RETRIES}.\n'
+            if num_retries < MAX_RETRIES:
+                msg += f'Increasing context window to {context_window *2}.\n'
+                context_window *= 2
 
             print(msg, file=sys.stderr)
             logging.info(msg)
