@@ -176,7 +176,6 @@ try:
     need_retry = False
     next_user_content = ''
     while True:
-        print("Weaving...")
 
         # Build the next user message
         #The word "retry" gets used for two slightly different things very close together in the code. The first is when we detect that the model is repeating itself, in which case we want to modify the input and try again. The second is when we catch an exception from the model, in which case we want to try the same input again without modification (since if the model threw an error it probably didn't process the input at all, so there's no risk of it just repeating itself).
@@ -192,10 +191,13 @@ try:
             next_user_content = assistant_reply
         elif num_retries >= MAX_RETRIES:
             #Give up and exit if we've reached the maximum number of retries. This is to prevent infinite loops in cases where the model is unresponsive or there's a persistent error.
-            print('Maximum retries reached.')
-            raise Exception(f'Model failed to respond after {MAX_RETRIES} retries.')
+            msg = f'Model failed to respond after {MAX_RETRIES} retries. Exiting.'
+            logging.error(msg)
+            print(msg, file=sys.stderr)
+            sys.exit(1)
         else:
             #Happy path where we just continue with the normal flow and use the continuation phrase as the next user content.
+            print("Weaving...")
             PREVIOUS_TEXT = assistant_reply
             next_user_content = CONTINUATION_PHRASE
 
@@ -217,12 +219,8 @@ try:
             num_retries = 0
 
         except Exception as e:
-            #Set the retry tracking variables so that we know to retry the same input on the next loop iteration, and increment the retry count.
-            num_retries += 1
-            need_retry = True
-            #We add  1 to the number of retries, since we start counting retries from 0 but we want to show the user a more intuitive count starting from 1.
+            #We add 1 to num_retries in the line below because we want the log message to reflect the retry attempt that is about to happen, not the one that just happened. So if the first attempt fails, we want the log to say "Retry 1 of 3", not "Retry 0 of 3".
             msg = f'Model threw exception: {e}. Retry {num_retries + 1} of {MAX_RETRIES}.'
-            num_retries += 1
 
             print(msg, file=sys.stderr)
             logging.info(msg)
@@ -232,8 +230,17 @@ try:
                 logging.error(f"Model error on round {ITER}: {e}")
                 conversation_history.pop()
                 sys.exit(1)
+            elif is_model_error(e) and num_retries < MAX_RETRIES:
+                #We have encountered an error but we haven't reached the maximum number of retries yet, so we will log the error and retry with the same input on the next loop iteration. We also pop the last user turn from the conversation history since it may not have been processed by the model due to the error, and we don't want to risk it causing repeat detection on the next attempt if it does get processed after all.
+                #msg = f"\nModel '{USE_MODEL}' threw an error but will retry."
+                #print(msg)
+                #logging.info(msg)
+                conversation_history.pop()
+                #Set the retry tracking variables so that we know to retry the same input on the next loop iteration, and increment the retry count.
+                num_retries += 1
+                need_retry = True
+                continue
             else:
-                #
                 print(f"Error on round {ITER}: {e}")
                 logging.error(f"Error on round {ITER}: {e}")
                 # Remove the user turn we just added since the request failed
